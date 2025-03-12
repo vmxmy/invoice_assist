@@ -1,0 +1,26 @@
+name: invoice_env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip=23.0
+  - flask=2.3.3
+  - werkzeug=2.3.7
+  - pandas=2.1.4
+  - python-dateutil=2.8.2
+  - python-dotenv=1.0.0
+  - requests=2.31.0
+  - pip:
+    - imap-tools==1.0.0
+    - email-validator==2.0.0
+    - pdfplumber==0.10.2
+    - PyPDF2==3.0.1
+    - python-magic==0.4.27
+    - chardet==5.2.0
+    - Flask-CORS==4.0.0
+    - openai==1.12.0
+    - imaplib2==3.6
+    - flask-login==0.6.3
+    - flask-sqlalchemy==3.1.1
+    - flask-wtf==1.2.1 

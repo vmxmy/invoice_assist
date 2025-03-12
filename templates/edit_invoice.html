@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}编辑发票 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>编辑发票信息</h1>
+            <div>
+                <a href="{{ url_for('invoice_detail', id=invoice.id) }}" class="btn btn-outline-secondary">返回详情</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <h2 class="card-title">编辑信息</h2>
+            <form method="post" action="{{ url_for('edit_invoice', id=invoice.id) }}">
+                <div class="mb-3">
+                    <label for="invoice_no" class="form-label">发票号码</label>
+                    <input type="text" class="form-control" id="invoice_no" name="invoice_no" value="{{ invoice.invoice_no }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="invoice_date" class="form-label">开票日期</label>
+                    <input type="text" class="form-control" id="invoice_date" name="invoice_date" value="{{ invoice.invoice_date }}" required>
+                    <div class="form-text">请使用"YYYY年MM月DD日"或"YYYY-MM-DD"格式</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="seller" class="form-label">开票方名称</label>
+                    <input type="text" class="form-control" id="seller" name="seller" value="{{ invoice.seller }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="amount" class="form-label">含税金额</label>
+                    <input type="text" class="form-control" id="amount" name="amount" value="{{ invoice.amount }}" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="project_name" class="form-label">项目名称</label>
+                    <input type="text" class="form-control" id="project_name" name="project_name" value="{{ invoice.project_name }}">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="notes" class="form-label">备注</label>
+                    <textarea class="form-control" id="notes" name="notes" rows="3">{{ invoice.notes or '' }}</textarea>
+                </div>
+                
+                <div class="d-flex justify-content-between">
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                    <a href="{{ url_for('invoice_detail', id=invoice.id) }}" class="btn btn-outline-secondary">取消</a>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <h2 class="card-title">文件信息</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>原始文件名</th>
+                            <td>{{ invoice.original_filename }}</td>
+                        </tr>
+                        <tr>
+                            <th>当前文件名</th>
+                            <td>{{ invoice.current_filename }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="alert alert-info mt-3">
+                <p class="mb-0"><strong>提示：</strong>修改发票信息后，系统会自动更新文件名，但不会修改原始文件。</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

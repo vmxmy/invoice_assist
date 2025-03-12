@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}发票管理 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">发票管理</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <h2 class="card-title">筛选发票</h2>
+            <form method="get" action="{{ url_for('invoices') }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="invoice_no" class="form-label">发票号码</label>
+                        <input type="text" class="form-control" id="invoice_no" name="invoice_no" value="{{ invoice_no }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="seller" class="form-label">开票方名称</label>
+                        <input type="text" class="form-control" id="seller" name="seller" value="{{ seller }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="date_from" class="form-label">开票日期从</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" value="{{ date_from }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="date_to" class="form-label">开票日期至</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" value="{{ date_to }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="amount_from" class="form-label">金额从</label>
+                        <input type="number" step="0.01" class="form-control" id="amount_from" name="amount_from" value="{{ amount_from }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="amount_to" class="form-label">金额至</label>
+                        <input type="number" step="0.01" class="form-control" id="amount_to" name="amount_to" value="{{ amount_to }}">
+                    </div>
+                </div>
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary">筛选</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="card-title mb-0">发票列表</h2>
+                <div>
+                    <button id="batch-download-btn" class="btn btn-success me-2" disabled>批量下载</button>
+                    <button id="batch-delete-btn" class="btn btn-danger" disabled>批量删除</button>
+                </div>
+            </div>
+            
+            <form id="batch-form" method="post" action="{{ url_for('batch_download_invoices') }}">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="select-all" class="form-check-input">
+                                </th>
+                                <th>发票号码</th>
+                                <th>开票日期</th>
+                                <th>开票方名称</th>
+                                <th>含税金额</th>
+                                <th>项目名称</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for invoice in invoices %}
+                            <tr>
+                                <td>
+                                    <input type="checkbox" name="invoice_ids" value="{{ invoice.id }}" class="form-check-input invoice-checkbox">
+                                </td>
+                                <td>{{ invoice.invoice_no }}</td>
+                                <td>{{ invoice.invoice_date }}</td>
+                                <td>{{ invoice.seller }}</td>
+                                <td>{{ invoice.amount }}</td>
+                                <td>{{ invoice.project_name }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('invoice_detail', id=invoice.id) }}" class="btn btn-outline-primary">查看</a>
+                                        <a href="{{ url_for('edit_invoice', id=invoice.id) }}" class="btn btn-outline-secondary">编辑</a>
+                                        <a href="{{ url_for('download_invoice', id=invoice.id) }}" class="btn btn-outline-success">下载</a>
+                                        <button type="button" class="btn btn-outline-danger" 
+                                                onclick="confirmDelete({{ invoice.id }})">删除</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </form>
+            
+            {% if not invoices %}
+            <div class="text-center py-4">
+                <p class="text-muted">暂无发票记录</p>
+            </div>
+            {% endif %}
+            
+            <!-- 分页 -->
+            {% if pagination.pages > 1 %}
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('invoices', page=pagination.prev_num, seller=seller, invoice_no=invoice_no, date_from=date_from, date_to=date_to, amount_from=amount_from, amount_to=amount_to) }}">上一页</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">上一页</span>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages() %}
+                        {% if page %}
+                            {% if page != pagination.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('invoices', page=page, seller=seller, invoice_no=invoice_no, date_from=date_from, date_to=date_to, amount_from=amount_from, amount_to=amount_to) }}">{{ page }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('invoices', page=pagination.next_num, seller=seller, invoice_no=invoice_no, date_from=date_from, date_to=date_to, amount_from=amount_from, amount_to=amount_to) }}">下一页</a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">下一页</span>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除这张发票吗？此操作不可撤销。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="deleteForm" method="post" action="">
+                    <button type="submit" class="btn btn-danger">删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 批量删除确认模态框 -->
+<div class="modal fade" id="batchDeleteModal" tabindex="-1" aria-labelledby="batchDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="batchDeleteModalLabel">确认批量删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除选中的发票吗？此操作不可撤销。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form id="batchDeleteForm" method="post" action="{{ url_for('batch_delete_invoices') }}">
+                    <div id="batch-delete-ids"></div>
+                    <button type="submit" class="btn btn-danger">删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmDelete(id) {
+        const deleteForm = document.getElementById('deleteForm');
+        deleteForm.action = "{{ url_for('delete_invoice', id=0) }}".replace('0', id);
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const selectAll = document.getElementById('select-all');
+        const invoiceCheckboxes = document.querySelectorAll('.invoice-checkbox');
+        const batchDownloadBtn = document.getElementById('batch-download-btn');
+        const batchDeleteBtn = document.getElementById('batch-delete-btn');
+        const batchForm = document.getElementById('batch-form');
+        const batchDeleteForm = document.getElementById('batchDeleteForm');
+        const batchDeleteIds = document.getElementById('batch-delete-ids');
+        
+        // 全选/取消全选
+        selectAll.addEventListener('change', function() {
+            invoiceCheckboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            updateBatchButtons();
+        });
+        
+        // 单个复选框变化时更新按钮状态
+        invoiceCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                updateBatchButtons();
+                
+                // 检查是否所有复选框都被选中
+                const allChecked = Array.from(invoiceCheckboxes).every(cb => cb.checked);
+                selectAll.checked = allChecked;
+            });
+        });
+        
+        // 更新批量按钮状态
+        function updateBatchButtons() {
+            const checkedCount = document.querySelectorAll('.invoice-checkbox:checked').length;
+            batchDownloadBtn.disabled = checkedCount === 0;
+            batchDeleteBtn.disabled = checkedCount === 0;
+        }
+        
+        // 批量下载按钮点击事件
+        batchDownloadBtn.addEventListener('click', function() {
+            batchForm.submit();
+        });
+        
+        // 批量删除按钮点击事件
+        batchDeleteBtn.addEventListener('click', function() {
+            // 获取所有选中的发票ID
+            const checkedIds = Array.from(document.querySelectorAll('.invoice-checkbox:checked')).map(cb => cb.value);
+            
+            // 清空并重新添加隐藏的input
+            batchDeleteIds.innerHTML = '';
+            checkedIds.forEach(id => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'invoice_ids';
+                input.value = id;
+                batchDeleteIds.appendChild(input);
+            });
+            
+            // 显示确认对话框
+            const batchDeleteModal = new bootstrap.Modal(document.getElementById('batchDeleteModal'));
+            batchDeleteModal.show();
+        });
+    });
+</script>
+{% endblock %} 

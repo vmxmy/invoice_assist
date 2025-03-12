@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}导入发票 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">从邮箱导入发票</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <h2 class="card-title">邮箱登录</h2>
+            <form method="post" action="{{ url_for('download_invoices') }}">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.email_account.label(class="form-label") }}
+                    {{ form.email_account(class="form-control") }}
+                    <div class="form-text">支持163、126、QQ、Gmail、Outlook等常见邮箱</div>
+                    {% for error in form.email_account.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control") }}
+                    <div class="form-text">QQ邮箱、163邮箱等需要使用授权码而非登录密码</div>
+                    {% for error in form.password.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {{ form.search_date.label(class="form-label") }}
+                    {{ form.search_date(class="form-control") }}
+                    <div class="form-text">只检索此日期之后的邮件，留空则检索所有邮件</div>
+                    {% for error in form.search_date.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn btn-primary", value="导入发票") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <h2 class="card-title">已保存的邮箱账号</h2>
+            {% if email_accounts %}
+            <div class="list-group">
+                {% for account in email_accounts %}
+                <button type="button" class="list-group-item list-group-item-action" onclick="fillEmailAccount('{{ account.email_address }}', '{{ account.password }}')">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ account.email_address }}</h5>
+                    </div>
+                    <p class="mb-1">{{ account.description or '无描述' }}</p>
+                </button>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center">您还没有保存任何邮箱账号</p>
+            <div class="d-grid">
+                <a href="{{ url_for('email_accounts') }}" class="btn btn-outline-primary">添加邮箱账号</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function fillEmailAccount(email, password) {
+        document.getElementById('email_account').value = email;
+        document.getElementById('password').value = password;
+    }
+    
+    // 从URL参数中获取邮箱和密码
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const email = urlParams.get('email');
+        const password = urlParams.get('password');
+        
+        if (email) {
+            document.getElementById('email_account').value = email;
+        }
+        
+        if (password) {
+            document.getElementById('password').value = password;
+        }
+    });
+</script>
+{% endblock %} 

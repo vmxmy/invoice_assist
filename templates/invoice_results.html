@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block title %}发票导入结果 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">发票导入结果</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <h2 class="card-title">处理完成</h2>
+            <div class="text-center mb-4">
+                <a href="{{ zip_file }}" class="download-button">
+                    下载处理后的发票压缩包
+                </a>
+            </div>
+            <div class="alert alert-info">
+                <p class="mb-0">
+                    <strong>处理结果：</strong>
+                    成功导入 {{ invoice_info|length }} 张新发票
+                    {% if duplicate_invoices %}
+                    ，跳过 {{ duplicate_invoices|length }} 张重复发票
+                    {% endif %}
+                </p>
+            </div>
+            <p class="text-center">
+                <a href="{{ url_for('download_invoices') }}" class="btn btn-outline-primary">返回导入页面</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">返回仪表盘</a>
+                <a href="{{ url_for('invoices') }}" class="btn btn-primary">查看所有发票</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+{% if invoice_info %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <h2 class="card-title">新导入的发票</h2>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>发票号码</th>
+                            <th>开票日期</th>
+                            <th>开票方名称</th>
+                            <th>含税金额</th>
+                            <th>项目名称</th>
+                            <th>文件名称</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for info in invoice_info %}
+                        <tr>
+                            <td>{{ info.invoice_no }}</td>
+                            <td>{{ info.invoice_date }}</td>
+                            <td>{{ info.seller }}</td>
+                            <td>{{ info.amount }}</td>
+                            <td>{{ info.project_name }}</td>
+                            <td>{{ info.filename }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if duplicate_invoices %}
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <h2 class="card-title">重复的发票（已跳过）</h2>
+            <div class="alert alert-warning">
+                <p class="mb-0">以下发票已存在于系统中，已自动跳过处理。</p>
+            </div>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>发票号码</th>
+                            <th>开票日期</th>
+                            <th>开票方名称</th>
+                            <th>含税金额</th>
+                            <th>项目名称</th>
+                            <th>文件名称</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for info in duplicate_invoices %}
+                        <tr>
+                            <td>{{ info.invoice_no }}</td>
+                            <td>{{ info.invoice_date }}</td>
+                            <td>{{ info.seller }}</td>
+                            <td>{{ info.amount }}</td>
+                            <td>{{ info.project_name }}</td>
+                            <td>{{ info.filename }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

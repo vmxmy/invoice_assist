@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}邮箱账号管理 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">邮箱账号管理</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <h2 class="card-title">添加邮箱账号</h2>
+            <form method="post" action="{{ url_for('email_accounts') }}">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.email_address.label(class="form-label") }}
+                    {{ form.email_address(class="form-control") }}
+                    {% for error in form.email_address.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control") }}
+                    <div class="form-text">QQ邮箱、163邮箱等需要使用授权码而非登录密码</div>
+                    {% for error in form.password.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="mb-3">
+                    {{ form.description.label(class="form-label") }}
+                    {{ form.description(class="form-control") }}
+                    <div class="form-text">可选，用于区分不同的邮箱账号</div>
+                    {% for error in form.description.errors %}
+                    <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <h2 class="card-title">已保存的邮箱账号</h2>
+            {% if accounts %}
+            <div class="list-group">
+                {% for account in accounts %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1">{{ account.email_address }}</h5>
+                        <small>{{ account.description or '无描述' }}</small>
+                        <small class="text-muted d-block">添加于 {{ account.created_at.strftime('%Y-%m-%d') }}</small>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('download_invoices') }}?email={{ account.email_address }}&password={{ account.password }}" class="btn btn-sm btn-primary">使用</a>
+                        <a href="{{ url_for('delete_email_account', id=account.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除此邮箱账号吗？')">删除</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-center">您还没有保存任何邮箱账号</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

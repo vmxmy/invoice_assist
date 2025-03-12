@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}历史记录 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">历史记录</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <h2 class="card-title">发票处理历史</h2>
+            {% if histories %}
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>处理时间</th>
+                            <th>邮箱账号</th>
+                            <th>检索日期</th>
+                            <th>发票数量</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for history in histories %}
+                        <tr>
+                            <td>{{ history.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                            <td>{{ history.email_account.email_address if history.email_account else '未记录' }}</td>
+                            <td>{{ history.search_date or '全部' }}</td>
+                            <td>{{ history.invoice_count }}</td>
+                            <td>
+                                {% if history.zip_filename %}
+                                <a href="{{ url_for('download_file', user_id=current_user.id, filename=history.zip_filename) }}" class="btn btn-sm btn-success">下载</a>
+                                {% else %}
+                                <span class="text-muted">无文件</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center">暂无处理记录</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %} 

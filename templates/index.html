@@ -1,39 +1,41 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Text Extractor</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-    <h1>Merged Text from PDF Files</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>File Name</th>
-                <th>Text Content</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file_name, text_content in texts.items() %}
-            <tr>
-                <td>{{ file_name }}</td>
-                <td>{{ text_content }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}发票下载器 - 自动下载和处理发票{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <h1 class="display-4 mb-4">发票下载器</h1>
+        <p class="lead mb-5">自动从邮箱下载发票，提取关键信息，重命名并打包</p>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">主要功能</h3>
+                        <ul class="list-group list-group-flush text-start">
+                            <li class="list-group-item">自动从邮箱下载发票附件</li>
+                            <li class="list-group-item">AI提取发票关键信息</li>
+                            <li class="list-group-item">按规则重命名发票文件</li>
+                            <li class="list-group-item">生成发票信息汇总表</li>
+                            <li class="list-group-item">打包下载处理后的文件</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h3 class="card-title">开始使用</h3>
+                        <p>请先登录或注册账号，然后开始使用发票下载器</p>
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('login') }}" class="btn btn-primary">登录</a>
+                            <a href="{{ url_for('register') }}" class="btn btn-outline-primary">注册</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

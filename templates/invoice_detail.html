@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}发票详情 - 发票下载器{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>发票详情</h1>
+            <div>
+                <a href="{{ url_for('invoices') }}" class="btn btn-outline-secondary me-2">返回列表</a>
+                <a href="{{ url_for('download_invoice', id=invoice.id) }}" class="btn btn-success me-2">下载发票</a>
+                <a href="{{ url_for('edit_invoice', id=invoice.id) }}" class="btn btn-primary">编辑信息</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <h2 class="card-title">基本信息</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th width="150">发票号码</th>
+                            <td>{{ invoice.invoice_no }}</td>
+                        </tr>
+                        <tr>
+                            <th>开票日期</th>
+                            <td>{{ invoice.invoice_date }}</td>
+                        </tr>
+                        <tr>
+                            <th>开票方名称</th>
+                            <td>{{ invoice.seller }}</td>
+                        </tr>
+                        <tr>
+                            <th>含税金额</th>
+                            <td>{{ invoice.amount }}</td>
+                        </tr>
+                        <tr>
+                            <th>项目名称</th>
+                            <td>{{ invoice.project_name }}</td>
+                        </tr>
+                        <tr>
+                            <th>备注</th>
+                            <td>{{ invoice.notes or '无' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <h2 class="card-title">文件信息</h2>
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>原始文件名</th>
+                            <td>{{ invoice.original_filename }}</td>
+                        </tr>
+                        <tr>
+                            <th>当前文件名</th>
+                            <td>{{ invoice.current_filename }}</td>
+                        </tr>
+                        <tr>
+                            <th>添加时间</th>
+                            <td>{{ invoice.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <th>最后更新</th>
+                            <td>{{ invoice.updated_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <h2 class="card-title">操作</h2>
+            <div class="d-grid gap-2">
+                <a href="{{ url_for('download_invoice', id=invoice.id) }}" class="btn btn-success">下载发票</a>
+                <a href="{{ url_for('edit_invoice', id=invoice.id) }}" class="btn btn-primary">编辑信息</a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    删除发票
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                确定要删除发票 {{ invoice.invoice_no }} 吗？此操作不可恢复。
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <form method="post" action="{{ url_for('delete_invoice', id=invoice.id) }}">
+                    <button type="submit" class="btn btn-danger">确认删除</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
