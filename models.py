@@ -8,11 +8,16 @@ db = SQLAlchemy()
 class User(UserMixin, db.Model):
     """用户模型"""
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, index=True)
-    email = db.Column(db.String(120), unique=True, index=True)
+    username = db.Column(db.String(64), index=True, unique=True)
+    email = db.Column(db.String(120), index=True, unique=True)
     password_hash = db.Column(db.String(128))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    last_login = db.Column(db.DateTime)
+    last_login = db.Column(db.DateTime, nullable=True)
+    
+    # 关系
+    email_accounts = db.relationship('EmailAccount', backref='user', lazy='dynamic')
+    invoice_histories = db.relationship('InvoiceHistory', backref='user', lazy='dynamic')
+    invoices = db.relationship('Invoice', backref='user', lazy='dynamic')
     
     def set_password(self, password):
         """设置密码哈希"""
@@ -30,11 +35,9 @@ class EmailAccount(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     email_address = db.Column(db.String(120), nullable=False)
-    password = db.Column(db.String(128), nullable=False)  # 应该加密存储
-    description = db.Column(db.String(64))
+    password = db.Column(db.String(128), nullable=False)  # 实际应用中应加密存储
+    description = db.Column(db.String(200))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    user = db.relationship('User', backref=db.backref('email_accounts', lazy=True))
     
     def __repr__(self):
         return f'<EmailAccount {self.email_address}>'
@@ -43,17 +46,16 @@ class InvoiceHistory(db.Model):
     """用户的发票处理历史"""
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    email_account_id = db.Column(db.Integer, db.ForeignKey('email_account.id'))
+    email_account_id = db.Column(db.Integer, db.ForeignKey('email_account.id'), nullable=True)
     search_date = db.Column(db.Date, nullable=True)
     invoice_count = db.Column(db.Integer, default=0)
-    zip_filename = db.Column(db.String(128), nullable=True)
+    zip_filename = db.Column(db.String(200), nullable=True)
     processed_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    user = db.relationship('User', backref=db.backref('invoice_histories', lazy=True))
-    email_account = db.relationship('EmailAccount', backref=db.backref('invoice_histories', lazy=True))
+    email_account = db.relationship('EmailAccount', backref='invoice_histories')
     
     def __repr__(self):
-        return f'<InvoiceHistory {self.id} - {self.invoice_count} invoices>'
+        return f'<InvoiceHistory {self.id}>'
 
 class Invoice(db.Model):
     """发票信息模型"""
@@ -62,25 +64,23 @@ class Invoice(db.Model):
     history_id = db.Column(db.Integer, db.ForeignKey('invoice_history.id'), nullable=True)
     
     # 发票基本信息
-    invoice_no = db.Column(db.String(50), index=True)  # 发票号码
-    invoice_date = db.Column(db.String(20))  # 开票日期
-    seller = db.Column(db.String(100))  # 开票方名称
-    amount = db.Column(db.String(20))  # 含税金额
-    project_name = db.Column(db.String(200))  # 项目名称
+    invoice_no = db.Column(db.String(50), nullable=False)
+    invoice_date = db.Column(db.String(20), nullable=True)  # 日期字符串，格式为YYYY-MM-DD
+    seller = db.Column(db.String(200), nullable=True)
+    amount = db.Column(db.String(20), nullable=True)
+    project_name = db.Column(db.String(500), nullable=True)
     
     # 文件信息
-    original_filename = db.Column(db.String(200))  # 原始文件名
-    current_filename = db.Column(db.String(200))  # 当前文件名
-    file_path = db.Column(db.String(500))  # 文件路径
+    original_filename = db.Column(db.String(200), nullable=True)
+    current_filename = db.Column(db.String(200), nullable=True)
+    file_path = db.Column(db.String(500), nullable=True)
     
     # 元数据
+    notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    notes = db.Column(db.Text, nullable=True)  # 备注
     
-    # 关系
-    user = db.relationship('User', backref=db.backref('invoices', lazy=True))
-    history = db.relationship('InvoiceHistory', backref=db.backref('invoices', lazy=True))
+    history = db.relationship('InvoiceHistory', backref='invoices')
     
     def __repr__(self):
-        return f'<Invoice {self.invoice_no} - {self.amount}>' 
+        return f'<Invoice {self.invoice_no}>' 

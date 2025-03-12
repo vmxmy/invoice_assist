@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, DateField
-from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, TextAreaField, DateField
+from wtforms.validators import DataRequired, Length, Email, EqualTo, ValidationError, Optional
 from models import User
 
 class LoginForm(FlaskForm):
@@ -39,7 +39,7 @@ class EmailAccountForm(FlaskForm):
 
 class InvoiceDownloadForm(FlaskForm):
     """发票下载表单"""
-    email_account = StringField('邮箱账号', validators=[DataRequired()])
+    email_account = StringField('邮箱账号', validators=[DataRequired(), Email()])
     password = PasswordField('授权码', validators=[DataRequired()])
-    search_date = DateField('起始日期', format='%Y-%m-%d', validators=[], render_kw={"placeholder": "YYYY-MM-DD"})
-    submit = SubmitField('导入发票') 
+    search_date = DateField('起始日期（可选）', format='%Y-%m-%d', validators=[Optional()], render_kw={"type": "date"})
+    submit = SubmitField('开始导入') 

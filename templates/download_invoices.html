@@ -13,35 +13,22 @@
     <div class="col-md-8">
         <div class="card">
             <h2 class="card-title">邮箱登录</h2>
-            <form method="post" action="{{ url_for('download_invoices') }}">
+            <form method="POST" action="{{ url_for('download_invoices') }}">
                 {{ form.hidden_tag() }}
-                <div class="mb-3">
-                    {{ form.email_account.label(class="form-label") }}
+                <div class="form-group">
+                    <label for="email_account">邮箱账号</label>
                     {{ form.email_account(class="form-control") }}
-                    <div class="form-text">支持163、126、QQ、Gmail、Outlook等常见邮箱</div>
-                    {% for error in form.email_account.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
                 </div>
-                <div class="mb-3">
-                    {{ form.password.label(class="form-label") }}
+                <div class="form-group">
+                    <label for="password">密码或授权码</label>
                     {{ form.password(class="form-control") }}
-                    <div class="form-text">QQ邮箱、163邮箱等需要使用授权码而非登录密码</div>
-                    {% for error in form.password.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
                 </div>
-                <div class="mb-3">
-                    {{ form.search_date.label(class="form-label") }}
+                <div class="form-group">
+                    <label for="search_date">检索日期（可选）</label>
                     {{ form.search_date(class="form-control") }}
-                    <div class="form-text">只检索此日期之后的邮件，留空则检索所有邮件</div>
-                    {% for error in form.search_date.errors %}
-                    <div class="text-danger">{{ error }}</div>
-                    {% endfor %}
+                    <small class="form-text text-muted">只下载此日期之后的发票，留空则下载所有发票</small>
                 </div>
-                <div class="d-grid">
-                    {{ form.submit(class="btn btn-primary", value="导入发票") }}
-                </div>
+                <button type="submit" class="btn btn-primary">开始下载</button>
             </form>
         </div>
     </div>
@@ -78,11 +65,26 @@
         document.getElementById('password').value = password;
     }
     
+    // 设置日期选择器的初始值为当前月份的第一天
+    function setFirstDayOfMonth() {
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        
+        // 格式化日期为YYYY-MM-DD格式
+        const year = firstDay.getFullYear();
+        const month = String(firstDay.getMonth() + 1).padStart(2, '0');
+        const day = String(firstDay.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
+        
+        document.getElementById('search_date').value = formattedDate;
+    }
+    
     // 从URL参数中获取邮箱和密码
     document.addEventListener('DOMContentLoaded', function() {
         const urlParams = new URLSearchParams(window.location.search);
         const email = urlParams.get('email');
         const password = urlParams.get('password');
+        const searchDate = urlParams.get('search_date');
         
         if (email) {
             document.getElementById('email_account').value = email;
@@ -90,6 +92,11 @@
         
         if (password) {
             document.getElementById('password').value = password;
+        }
+        
+        // 如果URL中没有日期参数，则设置为当前月份的第一天
+        if (!searchDate) {
+            setFirstDayOfMonth();
         }
     });
 </script>

@@ -1,0 +1,135 @@
+def extract_invoice_info(pdf_path):
+    """使用自定义 OpenAI 代理服务器从PDF发票中提取信息"""
+    requested_model = Config.get_model()
+    #print(f"请求使用的模型: {requested_model}")  # 打印请求的模型
+    
+    try:
+        # 读取 PDF 文本
+        with pdfplumber.open(pdf_path) as pdf:
+            text = pdf.pages[0].extract_text()
+        
+        # 构建 prompt
+        prompt = f"""
+        请从以下发票文本中提取关键信息，以JSON格式返回以下字段：
+        - invoice_date (开票日期，必须使用YYYY-MM-DD格式，例如2023-01-01)
+        - seller (开票方名称)
+        - amount (含税金额，只需数字)
+        - project_name (项目名称，从货物或应税劳务、服务名称中提取)
+        - invoice_no (发票号码)
+
+        发票文本内容：
+        {text}
+
+        请只返回JSON格式的数据，不要有其他说明文字。格式如下：
+        {{
+            "invoice_date": "YYYY-MM-DD",
+            "seller": "公司名称",
+            "amount": "金额数字",
+            "project_name": "项目名称",
+            "invoice_no": "发票号码"
+        }}
+        
+        特别注意：日期必须是YYYY-MM-DD格式，如果原始日期是中文格式如"2023年01月01日"，请转换为"2023-01-01"。
+        """
+
+        # 获取API基础URL
+        api_base = Config.get_api_base()
+        
+        # 构建完整的API端点URL
+        api_endpoint = f"{api_base}/v1/chat/completions"
+
+        # 调用自定义 OpenAI 代理服务器
+        response = requests.post(
+            api_endpoint,
+            json={
+                "model": Config.get_model(),
+                "messages": [
+                    {"role": "system", "content": "你是一个专门处理发票信息的助手，请严格按照要求的JSON格式返回提取的信息。日期必须使用YYYY-MM-DD格式。如果是机票或者火车票，请务必把【出发地-目的地，出发日期，出发时间，航班号/车次，舱位等级】填入项目名称。"},
+                    {"role": "user", "content": prompt}
+                ],
+                "temperature": 0
+            },
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {Config.get_api_key()}'
+            }
+        )
+        
+        # 打印原始响应以进行调试
+        print("API Response:", response.text)
+        
+        # 初始化content变量，避免后续引用错误
+        content = ""
+        
+        # 解析响应
+        try:
+            result = response.json()
+            actual_model = result.get('model', 'unknown')  # 获取实际使用的模型
+            
+            # 检查响应结构
+            if 'response' in result:
+                content = result['response']
+            elif 'choices' in result and len(result['choices']) > 0:
+                content = result['choices'][0]['message']['content']
+            else:
+                print(f"未知的响应格式: {result}")
+                return None
+            
+            # 清理 Markdown 格式
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]  # 移除 ```json
+            if content.endswith('```'):
+                content = content[:-3]  # 移除结尾的 ```
+            content = content.strip()
+            
+            # 解析内容中的 JSON
+            extracted_info = json.loads(content)
+            
+            # 确保日期格式为YYYY-MM-DD
+            if 'invoice_date' in extracted_info:
+                date_str = extracted_info['invoice_date']
+                # 如果日期是中文格式，转换为标准格式
+                chinese_pattern = r'(\d{4})年(\d{1,2})月(\d{1,2})日'
+                match = re.search(chinese_pattern, date_str)
+                if match:
+                    year, month, day = match.groups()
+                    extracted_info['invoice_date'] = f"{year}-{int(month):02d}-{int(day):02d}"
+                
+                # 确保日期格式正确
+                date_pattern = r'^\d{4}-\d{2}-\d{2}$'
+                if not re.match(date_pattern, extracted_info['invoice_date']):
+                    print(f"警告: 日期格式不正确: {extracted_info['invoice_date']}")
+                    # 尝试解析并重新格式化日期
+                    try:
+                        from datetime import datetime
+                        # 尝试多种格式
+                        for fmt in ['%Y年%m月%d日', '%Y/%m/%d', '%Y-%m-%d', '%Y.%m.%d']:
+                            try:
+                                dt = datetime.strptime(date_str, fmt)
+                                extracted_info['invoice_date'] = dt.strftime('%Y-%m-%d')
+                                break
+                            except ValueError:
+                                continue
+                    except Exception as e:
+                        print(f"日期格式化失败: {e}")
+            
+            # 添加文件名
+            extracted_info['filename'] = os.path.basename(pdf_path)
+            extracted_info['filepath'] = pdf_path
+            return extracted_info
+        except json.JSONDecodeError as e:
+            print(f"JSON解析错误: {e}")
+            print(f"尝试解析的内容: {content}")
+            return None
+        except Exception as e:
+            print(f"API响应解析错误: {e}")
+            print(f"响应内容: {response.text}")
+            return None
+            
+    except requests.RequestException as e:
+        print(f"API请求错误: {e}")
+        return None
+    except Exception as e:
+        print(f"处理过程中出现错误: {e}")
+        return None 

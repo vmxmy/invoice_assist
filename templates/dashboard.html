@@ -3,106 +3,114 @@
 {% block title %}仪表盘 - 发票下载器{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="mb-4">仪表盘</h1>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-6">
-        <div class="card">
-            <h2 class="card-title">快速操作</h2>
-            <div class="d-grid gap-2">
-                <a href="{{ url_for('download_invoices') }}" class="btn btn-primary">导入发票</a>
-                <a href="{{ url_for('invoices') }}" class="btn btn-outline-primary">管理发票</a>
-                <a href="{{ url_for('email_accounts') }}" class="btn btn-outline-primary">管理邮箱账号</a>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <h2 class="card-title">账号信息</h2>
-            <p><strong>用户名:</strong> {{ current_user.username }}</p>
-            <p><strong>邮箱:</strong> {{ current_user.email }}</p>
-            <p><strong>注册时间:</strong> {{ current_user.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</p>
-            <p><strong>上次登录:</strong> {{ current_user.last_login.strftime('%Y-%m-%d %H:%M:%S') if current_user.last_login else '首次登录' }}</p>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <h2 class="card-title">已保存的邮箱账号</h2>
-            {% if email_accounts %}
-            <div class="list-group">
-                {% for account in email_accounts %}
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">{{ account.email_address }}</h5>
-                        <small>
-                            <a href="{{ url_for('delete_email_account', id=account.id) }}" 
-                               onclick="return confirm('确定要删除此邮箱账号吗？')" 
-                               class="text-danger">删除</a>
-                        </small>
-                    </div>
-                    <p class="mb-1">{{ account.description or '无描述' }}</p>
-                    <small>
-                        <a href="{{ url_for('download_invoices', email=account.email_address, password=account.password) }}" 
-                           class="btn btn-sm btn-outline-primary">使用此账号导入发票</a>
-                    </small>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-center">您还没有保存任何邮箱账号</p>
-            <div class="d-grid">
-                <a href="{{ url_for('email_accounts') }}" class="btn btn-outline-primary">添加邮箱账号</a>
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <h2 class="card-title">最近处理记录</h2>
-            {% if histories %}
-            <div class="list-group">
-                {% for history in histories %}
-                <div class="list-group-item">
-                    <div class="d-flex w-100 justify-content-between">
-                        <h5 class="mb-1">{{ history.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}</h5>
-                        <div class="d-flex align-items-center">
-                            <span class="me-3">{{ history.invoice_count }} 张发票</span>
-                            {% if history.zip_filename %}
-                            <a href="{{ url_for('download_file', user_id=current_user.id, filename=history.zip_filename) }}" 
-                               class="btn btn-sm btn-outline-success">下载打包文件</a>
-                            {% endif %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">仪表盘</h1>
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">导入发票</h5>
+                            <p class="card-text">从邮箱自动下载并导入发票</p>
+                            <a href="{{ url_for('download_invoices') }}" class="btn btn-primary">开始导入</a>
                         </div>
                     </div>
-                    <p class="mb-1">
-                        {% if history.search_date %}
-                        检索 {{ history.search_date.strftime('%Y-%m-%d') }} 之后的邮件
-                        {% else %}
-                        检索所有邮件
-                        {% endif %}
-                    </p>
-                    <small>
-                        {% if history.email_account %}
-                        使用账号: {{ history.email_account.email_address }}
-                        {% endif %}
-                    </small>
                 </div>
-                {% endfor %}
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">手动上传</h5>
+                            <p class="card-text">手动上传PDF发票文件</p>
+                            <a href="{{ url_for('upload_invoice') }}" class="btn btn-success">上传发票</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5 class="card-title">管理发票</h5>
+                            <p class="card-text">查看和管理已导入的发票</p>
+                            <a href="{{ url_for('invoices') }}" class="btn btn-info">发票列表</a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% else %}
-            <p class="text-center">您还没有处理记录</p>
-            <div class="d-grid">
-                <a href="{{ url_for('download_invoices') }}" class="btn btn-outline-primary">导入发票</a>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">邮箱账号</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if email_accounts %}
+                            <div class="list-group">
+                                {% for account in email_accounts %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ account.email_address }}</h6>
+                                        <a href="{{ url_for('delete_email_account', id=account.id) }}" class="text-danger" onclick="return confirm('确定要删除此邮箱账号吗？')">删除</a>
+                                    </div>
+                                    <p class="mb-1 text-muted">{{ account.description or '无描述' }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">暂无保存的邮箱账号</p>
+                            {% endif %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('email_accounts') }}" class="btn btn-sm btn-outline-primary">管理邮箱账号</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">最近处理历史</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if histories %}
+                            <div class="list-group">
+                                {% for history in histories %}
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ history.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}</h6>
+                                        <span class="badge badge-primary">{{ history.invoice_count }} 张发票</span>
+                                    </div>
+                                    <p class="mb-1">
+                                        {% if history.email_account %}
+                                        邮箱: {{ history.email_account.email_address }}
+                                        {% else %}
+                                        邮箱: 未记录
+                                        {% endif %}
+                                        {% if history.search_date %}
+                                        | 检索日期: {{ history.search_date.strftime('%Y-%m-%d') }}
+                                        {% endif %}
+                                    </p>
+                                    {% if history.zip_filename %}
+                                    <div class="mt-2">
+                                        <a href="{{ url_for('download_file', user_id=current_user.id, filename=history.zip_filename) }}" class="btn btn-sm btn-outline-success">下载ZIP</a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="text-muted">暂无处理历史</p>
+                            {% endif %}
+                            <div class="mt-3">
+                                <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-primary">查看全部历史</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>

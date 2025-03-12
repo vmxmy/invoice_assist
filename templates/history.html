@@ -3,51 +3,113 @@
 {% block title %}历史记录 - 发票下载器{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-md-12">
-        <h1 class="mb-4">历史记录</h1>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <h2 class="card-title">发票处理历史</h2>
-            {% if histories %}
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>处理时间</th>
-                            <th>邮箱账号</th>
-                            <th>检索日期</th>
-                            <th>发票数量</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for history in histories %}
-                        <tr>
-                            <td>{{ history.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                            <td>{{ history.email_account.email_address if history.email_account else '未记录' }}</td>
-                            <td>{{ history.search_date or '全部' }}</td>
-                            <td>{{ history.invoice_count }}</td>
-                            <td>
-                                {% if history.zip_filename %}
-                                <a href="{{ url_for('download_file', user_id=current_user.id, filename=history.zip_filename) }}" class="btn btn-sm btn-success">下载</a>
-                                {% else %}
-                                <span class="text-muted">无文件</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <h1 class="mb-4">历史记录</h1>
+            
+            {% if current_processing %}
+            <div class="alert alert-info mb-4">
+                <h4 class="alert-heading">正在处理发票</h4>
+                <p>{{ processing_message }}</p>
+                <hr>
+                <p class="mb-0">您可以继续使用其他功能，处理完成后结果将显示在历史记录中。</p>
+                <div class="mt-2">
+                    <a href="{{ url_for('show_processing') }}" class="btn btn-sm btn-primary">查看处理详情</a>
+                </div>
             </div>
-            {% else %}
-            <p class="text-center">暂无处理记录</p>
             {% endif %}
+            
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">处理记录</h5>
+                    {% if histories %}
+                    <a href="{{ url_for('clear_history_sql') }}" class="btn btn-danger" onclick="return confirm('确定要清除所有历史记录吗？此操作不可恢复！')">清除记录</a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if histories %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>处理时间</th>
+                                    <th>邮箱账号</th>
+                                    <th>检索日期</th>
+                                    <th>发票数量</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for history in histories %}
+                                <tr>
+                                    <td>{{ history.processed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                                    <td>{{ history.email_account.email_address if history.email_account else '未记录' }}</td>
+                                    <td>{{ history.search_date.strftime('%Y-%m-%d') if history.search_date else '全部' }}</td>
+                                    <td>{{ history.invoice_count }}</td>
+                                    <td>
+                                        {% if history.zip_filename %}
+                                        <a href="{{ url_for('download_file', user_id=current_user.id, filename=history.zip_filename) }}" class="btn btn-sm btn-outline-primary">下载ZIP</a>
+                                        {% else %}
+                                        <span class="text-muted">无文件</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <p class="text-muted">暂无历史记录</p>
+                        <a href="{{ url_for('download_invoices') }}" class="btn btn-primary">开始导入发票</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var clearBtn = document.getElementById('clearHistoryBtn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function() {
+                if (confirm('确定要清除所有历史记录吗？此操作不可恢复！')) {
+                    // 使用AJAX请求清除历史记录
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', '/clear_history_sql', true);
+                    xhr.onload = function() {
+                        if (xhr.status === 200) {
+                            // 解析JSON响应
+                            try {
+                                var response = JSON.parse(xhr.responseText);
+                                if (response.success) {
+                                    alert(response.message);
+                                    // 刷新页面
+                                    window.location.href = '/history';
+                                } else {
+                                    alert('清除历史记录失败: ' + response.message);
+                                }
+                            } catch (e) {
+                                console.error('解析响应失败:', e);
+                                // 无论如何都刷新页面
+                                window.location.href = '/history';
+                            }
+                        } else {
+                            alert('清除历史记录失败，请稍后再试。');
+                        }
+                    };
+                    xhr.onerror = function() {
+                        alert('清除历史记录失败，请稍后再试。');
+                    };
+                    xhr.send();
+                }
+            });
+        }
+    });
+</script>
 {% endblock %} 
