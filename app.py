@@ -62,7 +62,11 @@ class Config:
     @classmethod
     def get_api_base(cls):
         cls._ensure_env_loaded()
-        return os.getenv('OPENAI_API_BASE') or 'http://10.10.10.16:3000'
+        base_url = os.getenv('OPENAI_API_BASE') or 'https://api.openai.com'
+        # 确保基础URL不以斜杠结尾
+        if base_url.endswith('/'):
+            base_url = base_url[:-1]
+        return base_url
     
     @classmethod
     def get_api_key(cls):
@@ -121,9 +125,15 @@ def extract_invoice_info(pdf_path):
         }}
         """
 
+        # 获取API基础URL
+        api_base = Config.get_api_base()
+        
+        # 构建完整的API端点URL
+        api_endpoint = f"{api_base}/v1/chat/completions"
+        
         # 调用自定义 OpenAI 代理服务器
         response = requests.post(
-            f"{Config.get_api_base()}/v1/chat/completions",
+            api_endpoint,
             json={
                 "model": Config.get_model(),
                 "messages": [
@@ -140,42 +150,53 @@ def extract_invoice_info(pdf_path):
         
         # 打印原始响应以进行调试
         print("API Response:", response.text)
-        result = response.json()
-        actual_model = result.get('model', 'unknown')  # 获取实际使用的模型
-        #print(f"实际使用的模型: {actual_model}")  # 打印实际使用的模型
         
-        # 检查响应结构
-        if 'response' in result:
-            content = result['response']
-        elif 'choices' in result and len(result['choices']) > 0:
-            content = result['choices'][0]['message']['content']
-        else:
-            print(f"未知的响应格式: {result}")
-            return None
+        # 初始化content变量，避免后续引用错误
+        content = ""
         
-        # 清理 Markdown 格式
-        content = content.strip()
-        if content.startswith('```json'):
-            content = content[7:]  # 移除 ```json
-        if content.endswith('```'):
-            content = content[:-3]  # 移除结尾的 ```
-        content = content.strip()
-        
-        # 解析内容中的 JSON
-        extracted_info = json.loads(content)
-        # 添加文件名
-        extracted_info['filename'] = os.path.basename(pdf_path)
-        # 添加原始文件路径
-        extracted_info['filepath'] = pdf_path
-        return extracted_info
+        # 解析响应
+        try:
+            result = response.json()
+            actual_model = result.get('model', 'unknown')  # 获取实际使用的模型
             
-    except json.JSONDecodeError as e:
-        print(f"JSON解析错误: {e}")
-        print(f"尝试解析的内容: {content}")
+            # 检查响应结构
+            if 'response' in result:
+                content = result['response']
+            elif 'choices' in result and len(result['choices']) > 0:
+                content = result['choices'][0]['message']['content']
+            else:
+                print(f"未知的响应格式: {result}")
+                return None
+            
+            # 清理 Markdown 格式
+            content = content.strip()
+            if content.startswith('```json'):
+                content = content[7:]  # 移除 ```json
+            if content.endswith('```'):
+                content = content[:-3]  # 移除结尾的 ```
+            content = content.strip()
+            
+            # 解析内容中的 JSON
+            extracted_info = json.loads(content)
+            # 添加文件名
+            extracted_info['filename'] = os.path.basename(pdf_path)
+            # 添加原始文件路径
+            extracted_info['filepath'] = pdf_path
+            return extracted_info
+        except json.JSONDecodeError as e:
+            print(f"JSON解析错误: {e}")
+            print(f"尝试解析的内容: {content}")
+            return None
+        except Exception as e:
+            print(f"API响应解析错误: {e}")
+            print(f"响应内容: {response.text}")
+            return None
+            
+    except requests.RequestException as e:
+        print(f"API请求错误: {e}")
         return None
     except Exception as e:
-        print(f"API调用错误: {e}")
-        print(f"完整响应: {result}")
+        print(f"处理过程中出现错误: {e}")
         return None
 
 def create_invoice_csv(invoice_info_list, output_dir):
